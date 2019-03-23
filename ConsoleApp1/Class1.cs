@@ -18,76 +18,121 @@ namespace ConsoleApp1
 
         public void Start()
         {
-            string directory = @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ViewModels\BuildingBlocks";
-            string fileName = @"FlowProperties\BaseBlockFlowPropertyViewModel.cs";
-            string pathFile = Path.Combine(directory, fileName);
-            var stream = File.OpenText(pathFile);
-            var csFile = stream.ReadToEnd();
-            string pattern = "class(.|\n)*?{";
-            var regularExpression = new Regex(pattern);
-            var matches = regularExpression.Matches(csFile);
+            var files = new List<string>();
+            string root = @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ViewModels\BuildingBlocks";
 
-            for (var i = 0; i < matches.Count; i++)
+            void AddFiles(string directory)
             {
-                var node = new Node();
-
-                //" BaseBlockFlowPropertyViewModel<TFlowProperty, TInnerFlowProperty> : FlowPropertyViewModel, IBaseBlockFlowPropertyViewModel        where TFlowProperty : IBlockFlowPropertyM<TInnerFlowProperty>        where TInnerFlowProperty : IFlowPropertyM    "
-                var a = matches[i].Value.Replace("class", "").Trim('{').Replace("\r\n", "");
-                if (a.Contains("where"))
+                files.AddRange(Directory.GetFiles(directory));
+                foreach (var subDir in Directory.GetDirectories(directory))
                 {
-                    if (a.Contains(':'))
-                    {
-                        if (a.IndexOf("where") > a.IndexOf(':'))
-                        {
-                            node.ClassName = a.Substring(0, a.IndexOf(':'));
-                            a = a.Remove(0, a.IndexOf(':'));
+                    AddFiles(subDir);
+                }
+            }
+            AddFiles(root);
 
-                            node.ParentClasses = a.Substring(0, a.IndexOf("where")).Split(',');
-                            a = a.Remove(0, a.IndexOf("where"));
-                            node.Constraints = a.Split(new []{"where"}, StringSplitOptions.None);
+            Console.WriteLine($"found {files.Count} files");
+
+            int index = 0;
+            
+            foreach (var file in files)
+            {
+               
+                var stream = File.OpenText(file);
+                var csFile = stream.ReadToEnd();
+                string pattern = "class(.|\n)*?{";
+                var regularExpression = new Regex(pattern);
+                var matches = regularExpression.Matches(csFile);
+
+
+                var nodes = new List<Node>();
+                for (var i = 0; i < matches.Count; i++)
+                {
+                    var node = new Node();
+                    var a = matches[i].Value.Replace("class", "").Trim('{').Replace("\r\n", "");
+                    if (a.Contains("where"))
+                    {
+                        if (a.Contains(':'))
+                        {
+                            if (a.IndexOf("where") > a.IndexOf(':'))
+                            {
+                                node.ClassName = a.Substring(0, a.IndexOf(':'));
+                                a = a.Remove(0, a.IndexOf(':'));
+
+                                node.ParentClasses = a.Substring(0, a.IndexOf("where"));
+                                a = a.Remove(0, a.IndexOf("where"));
+                                node.Constraints = a;
+                            }
+                            else
+                            {
+                                node.ClassName = a.Substring(0, a.IndexOf("where"));
+                                a = a.Remove(0, a.IndexOf("where"));
+                                node.ParentClasses = null;
+                                node.Constraints = a;
+                            }
                         }
                         else
                         {
                             node.ClassName = a.Substring(0, a.IndexOf("where"));
                             a = a.Remove(0, a.IndexOf("where"));
                             node.ParentClasses = null;
-                            node.Constraints = a.Split(new[] { "where" }, StringSplitOptions.None);
+                            node.Constraints = a;
                         }
                     }
                     else
                     {
-                        node.ClassName = a.Substring(0, a.IndexOf("where"));
-                        a = a.Remove(0, a.IndexOf("where"));
-                        node.ParentClasses = null;
-                        node.Constraints = a.Split(new[] { "where" }, StringSplitOptions.None);
+
+                        if (a.Contains(':'))
+                        {
+                            node.ClassName = a.Substring(0, a.IndexOf(':'));
+                            a = a.Remove(0, a.IndexOf(':'));
+                            node.ParentClasses = a;
+                            node.Constraints = null;
+                        }
+                        else
+                        {
+                            node.ClassName = a;
+                            node.ParentClasses = null;
+                            node.Constraints = null;
+                        }
                     }
+
+                    nodes.Add(node);
                 }
-                else
+
+                foreach (var node in nodes)
                 {
+                    Console.WriteLine();
+                    Console.WriteLine();
+                    Console.WriteLine(node.ClassName);
+                    Console.WriteLine(node.ParentClasses);
+                    Console.WriteLine(node.Constraints);
                   
-                    if (a.Contains(':'))
-                    {
-                        node.ClassName = a.Substring(0, a.IndexOf(':'));
-                        a = a.Remove(0, a.IndexOf(':'));
-                        node.ParentClasses = a.Split(',');
-                        node.Constraints = null;
-                    }
-                    else
-                    {
-                        node.ClassName = a;
-                        node.ParentClasses = null;
-                        node.Constraints = null;
-                    }
+                    Console.WriteLine($"{index}{new string('-', 30)}");
                 }
+
+                index++;
             }
+
+
+            Console.ReadKey();
         }
     }
 
     public class Node
     {
         public string ClassName { get; set; }
-        public string[] ParentClasses { get; set; }
-        public string[] Constraints { get; set; }
+        public string Generics { get; set; }
+        public string ParentClasses { get; set; }
+        public string Constraints { get; set; }
+
+        public Node()
+        {
+            ClassName = string.Empty;
+            Generics = String.Empty;
+            ParentClasses = string.Empty;
+            Constraints = string.Empty;
+        }
     }
 }
 
