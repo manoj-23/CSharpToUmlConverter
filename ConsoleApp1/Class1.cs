@@ -38,7 +38,7 @@ namespace ConsoleApp1
                 var csFile = stream.ReadToEnd();
                 var regularExpression = new Regex(Node.Template);
                 var matches = regularExpression.Matches(csFile);
-                
+
                 var nodes = new List<Node>();
                 for (var i = 0; i < matches.Count; i++)
                 {
@@ -84,7 +84,8 @@ namespace ConsoleApp1
             {
                 if (a.IndexOf(':') < a.IndexOf("where", StringComparison.Ordinal)) //class has inheritance 
                 {
-                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')
+                    ) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
@@ -105,7 +106,9 @@ namespace ConsoleApp1
                 }
                 else //class haven`t inheritance
                 {
-                    if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') && a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')) // class has generics
+                    if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') &&
+                        a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')
+                    ) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
@@ -128,7 +131,8 @@ namespace ConsoleApp1
             {
                 if (a.Contains(':')) //class has inheritance 
                 {
-                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')
+                    ) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
@@ -164,6 +168,26 @@ namespace ConsoleApp1
                 }
             }
 
+            return node;
+        }
+
+
+        public static Node Parse1(string a)
+        {
+            a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
+            var node = new Node();
+            // class Abc<T, T1, T2> : Base1<T2, T3>, Base2<T2, T1> where T1 : Base where T2 : new()
+            
+
+            // has constraint, class has inheritance, class has generics
+            // has constraint, class has inheritance, class haven`t generics
+            // has constraint, class haven`t inheritance, class has generics
+            // has constraint, class haven`t inheritance, class haven`t generics
+            // haven`t constraint, class has inheritance, class has generics
+            // haven`t constraint, class has inheritance, class haven`t generics
+            // haven`t constraint, class haven`t inheritance, class has generics
+            // haven`t constraint, class haven`t inheritance, class haven`t generics
+            
             return node;
         }
     }
