@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
@@ -34,70 +31,18 @@ namespace ConsoleApp1
             Console.WriteLine($"found {files.Count} files");
 
             int index = 0;
-            
+
             foreach (var file in files)
             {
-               
                 var stream = File.OpenText(file);
                 var csFile = stream.ReadToEnd();
-                string pattern = "class(.|\n)*?{";
-                var regularExpression = new Regex(pattern);
+                var regularExpression = new Regex(Node.Template);
                 var matches = regularExpression.Matches(csFile);
-
-
+                
                 var nodes = new List<Node>();
                 for (var i = 0; i < matches.Count; i++)
                 {
-                    var node = new Node();
-                    var a = matches[i].Value.Replace("class", "").Trim('{').Replace("\r\n", "");
-                    if (a.Contains("where"))
-                    {
-                        if (a.Contains(':'))
-                        {
-                            if (a.IndexOf("where") > a.IndexOf(':'))
-                            {
-                                node.ClassName = a.Substring(0, a.IndexOf(':'));
-                                a = a.Remove(0, a.IndexOf(':'));
-
-                                node.ParentClasses = a.Substring(0, a.IndexOf("where"));
-                                a = a.Remove(0, a.IndexOf("where"));
-                                node.Constraints = a;
-                            }
-                            else
-                            {
-                                node.ClassName = a.Substring(0, a.IndexOf("where"));
-                                a = a.Remove(0, a.IndexOf("where"));
-                                node.ParentClasses = null;
-                                node.Constraints = a;
-                            }
-                        }
-                        else
-                        {
-                            node.ClassName = a.Substring(0, a.IndexOf("where"));
-                            a = a.Remove(0, a.IndexOf("where"));
-                            node.ParentClasses = null;
-                            node.Constraints = a;
-                        }
-                    }
-                    else
-                    {
-
-                        if (a.Contains(':'))
-                        {
-                            node.ClassName = a.Substring(0, a.IndexOf(':'));
-                            a = a.Remove(0, a.IndexOf(':'));
-                            node.ParentClasses = a;
-                            node.Constraints = null;
-                        }
-                        else
-                        {
-                            node.ClassName = a;
-                            node.ParentClasses = null;
-                            node.Constraints = null;
-                        }
-                    }
-
-                    nodes.Add(node);
+                    nodes.Add(Node.Parse(matches[i].Value));
                 }
 
                 foreach (var node in nodes)
@@ -105,9 +50,10 @@ namespace ConsoleApp1
                     Console.WriteLine();
                     Console.WriteLine();
                     Console.WriteLine(node.ClassName);
-                    Console.WriteLine(node.ParentClasses);
+                    Console.WriteLine(node.ClassGenerics);
+                    Console.WriteLine(node.Parents);
                     Console.WriteLine(node.Constraints);
-                  
+
                     Console.WriteLine($"{index}{new string('-', 30)}");
                 }
 
@@ -121,22 +67,105 @@ namespace ConsoleApp1
 
     public class Node
     {
+        public static readonly string Template = "class(.|\n)*?{";
+
         public string ClassName { get; set; }
-        public string Generics { get; set; }
-        public string ParentClasses { get; set; }
+        public string ClassGenerics { get; set; }
+        public string Parents { get; set; }
         public string Constraints { get; set; }
 
-        public Node()
+        public static Node Parse(string a)
         {
-            ClassName = string.Empty;
-            Generics = String.Empty;
-            ParentClasses = string.Empty;
-            Constraints = string.Empty;
+            a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
+            var node = new Node();
+
+            // class Abc<T, T1, T2> : Base1<T2, T3>, Base2<T2, T1> where T1 : Base where T2 : new()
+            if (a.Contains("where")) //has constraint
+            {
+                if (a.IndexOf(':') < a.IndexOf("where", StringComparison.Ordinal)) //class has inheritance 
+                {
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf('<'));
+                        a = a.Remove(0, a.IndexOf('<'));
+                        node.ClassGenerics = a.Substring(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf(':'));
+                    }
+                    else // class haven`t generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf(':'));
+                        a = a.Remove(0, a.IndexOf(':'));
+                        node.ClassGenerics = null;
+                    }
+
+                    node.Parents = a.Substring(0, a.IndexOf("where", StringComparison.Ordinal));
+                    a = a.Remove(0, a.IndexOf("where", StringComparison.Ordinal));
+                    node.Constraints = a;
+                }
+                else //class haven`t inheritance
+                {
+                    if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') && a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')) // class has generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf('<'));
+                        a = a.Remove(0, a.IndexOf('<'));
+                        node.ClassGenerics = a.Substring(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf("where", StringComparison.Ordinal));
+                    }
+                    else // class haven`t generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf("where", StringComparison.Ordinal));
+                        node.ClassGenerics = null;
+                        a = a.Remove(0, a.IndexOf("where", StringComparison.Ordinal));
+                    }
+
+                    node.Parents = null;
+                    node.Constraints = a;
+                }
+            }
+            else // haven`t constraint
+            {
+                if (a.Contains(':')) //class has inheritance 
+                {
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf('<'));
+                        a = a.Remove(0, a.IndexOf('<'));
+                        node.ClassGenerics = a.Substring(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf('>'));
+                        a = a.Remove(0, a.IndexOf(':'));
+                    }
+                    else // class haven`t generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf(':'));
+                        node.ClassGenerics = null;
+                        a = a.Remove(0, a.IndexOf(':'));
+                    }
+
+                    node.Parents = a;
+                    node.Constraints = null;
+                }
+                else // class haven`t inheritance
+                {
+                    if (a.Contains('<') && a.Contains('>')) // class has generics
+                    {
+                        node.ClassName = a.Substring(0, a.IndexOf('<'));
+                        a = a.Remove(0, a.IndexOf('<'));
+                        node.ClassGenerics = a.Substring(0, a.IndexOf('>'));
+                    }
+                    else // class haven`t generics
+                    {
+                        node.ClassName = a;
+                        node.ClassGenerics = null;
+                        node.Parents = null;
+                        node.Constraints = null;
+                    }
+                }
+            }
+
+            return node;
         }
     }
 }
 
-
-//C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ViewModels\BuildingBlocks\FlowPropertyViewModel.cs
-//C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ViewModels\BuildingBlocks\CompareBaseBlockViewModel.cs
-//C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ViewModels\BuildingBlocks\FlowProperties\BaseBlockFlowPropertyViewModel.cs
