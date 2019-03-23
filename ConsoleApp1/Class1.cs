@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace ConsoleApp1
@@ -84,8 +85,7 @@ namespace ConsoleApp1
             {
                 if (a.IndexOf(':') < a.IndexOf("where", StringComparison.Ordinal)) //class has inheritance 
                 {
-                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')
-                    ) // class has generics
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
@@ -106,8 +106,7 @@ namespace ConsoleApp1
                 }
                 else //class haven`t inheritance
                 {
-                    if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') &&
-                        a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')
+                    if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') && a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')
                     ) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
@@ -131,8 +130,7 @@ namespace ConsoleApp1
             {
                 if (a.Contains(':')) //class has inheritance 
                 {
-                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')
-                    ) // class has generics
+                    if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
                     {
                         node.ClassName = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
@@ -176,18 +174,34 @@ namespace ConsoleApp1
         {
             a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
             var node = new Node();
-            // class Abc<T, T1, T2> : Base1<T2, T3>, Base2<T2, T1> where T1 : Base where T2 : new()
-            
+
+
 
             // has constraint, class has inheritance, class has generics
+            var assertion = "(?=^.*<.*> *:.*where).*";
+            //  Abc<T>  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class
+            var className = @"^.*?(?=<)";
+            var classGenerics = "<.*?>(?= *?:)";
+            var parrents = "(?<=> *:).*? (?=where)";
+            var constraints = "(?<=^.*)(?=where).*";
+
             // has constraint, class has inheritance, class haven`t generics
+            assertion = "(?=^.*:.*where).*";
+            //  Abc  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class where T3 : IBase
+            className = "^.*?(?=:)";
+            classGenerics = "";
+            parrents = "(?<=^:).*?(?=where)";
+            constraints = "(?=^ *where).*";
+
             // has constraint, class haven`t inheritance, class has generics
+            assertion = "";
+
             // has constraint, class haven`t inheritance, class haven`t generics
             // haven`t constraint, class has inheritance, class has generics
             // haven`t constraint, class has inheritance, class haven`t generics
             // haven`t constraint, class haven`t inheritance, class has generics
             // haven`t constraint, class haven`t inheritance, class haven`t generics
-            
+
             return node;
         }
     }
