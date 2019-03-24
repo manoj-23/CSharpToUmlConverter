@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Data;
 
 namespace UmlGenerator
 {
@@ -28,8 +29,27 @@ namespace UmlGenerator
                             if (a.IndexOf('<') < a.IndexOf(',')) // first parent has generics
                             {
                                 info.ClassName = a.Substring(0, a.IndexOf('<'));
-                                info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') + 1 - a.IndexOf('<'));
-                                a = a.Remove(0, a.IndexOf('>') + 1);
+                                a = a.Remove(0, a.IndexOf('<'));
+                                //    ILazyLoadingItem<Tuple<Guid, Guid>, Tuple<Guid, Guid>>, ILazyLoadingItem<Tuple<Guid, Guid>, Tuple<Guid, Guid>>, 
+
+                                var opening = 0;
+                                var closing = 0;
+                                var index = 0;
+                                foreach (var symbol in a)
+                                {
+                                    if (symbol.Equals('<'))
+                                        opening++;
+                                    if (symbol.Equals('>'))
+                                        closing++;
+
+                                    if (opening == closing)
+                                        break;
+
+                                    index++;
+                                }
+
+                                info.ClassGenerics = a.Substring(0, index + 1);
+                                a = a.Remove(0, index + 1);
                                 a = a.Remove(0, a.IndexOf(',') + 1);
                             }
                             else // first parent haven`t generics
@@ -42,7 +62,8 @@ namespace UmlGenerator
                         else // haven`t commas
                         {
                             info.ClassName = a.Substring(0, a.IndexOf('<'));
-                            info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') + 1 - a.IndexOf('<'));
+                            a = a.Remove(0, a.IndexOf('<'));
+                            info.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1 - a.IndexOf('<'));
                             a = a.Remove(0, a.IndexOf('>') + 1);
                         }
                     } // haven`t generics
