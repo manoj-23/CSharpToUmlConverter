@@ -2,13 +2,12 @@
 using System.Linq;
 using System.Windows.Data;
 
-namespace UmlGenerator
+namespace CSharpToUmlConverter
 {
     public class Node
     {
         public static readonly string Template = "class(.|\n)*?{";
-
-
+        
         public ClassInfo Class { get; set; }
 
         public List<ClassInfo> Parents { get; set; }

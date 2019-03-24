@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace UmlGenerator
+namespace CSharpToUmlConverter
 {
     class Program
     {
@@ -29,7 +29,7 @@ namespace UmlGenerator
                 return;
             }
 
-            new Generator().Start(root, outputPath);
+            new Converter().Start(root, outputPath);
         }
     }
 }

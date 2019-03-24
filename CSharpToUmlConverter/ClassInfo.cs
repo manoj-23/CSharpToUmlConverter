@@ -1,4 +1,4 @@
-﻿namespace UmlGenerator
+﻿namespace CSharpToUmlConverter
 {
     public class ClassInfo
     {

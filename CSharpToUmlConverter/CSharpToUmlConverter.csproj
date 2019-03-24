@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{68974CAA-5D8B-4EDE-8135-D70300CAA3CC}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>UmlGenerator</RootNamespace>
-    <AssemblyName>UmlGenerator</AssemblyName>
+    <RootNamespace>CSharpToUmlConverter</RootNamespace>
+    <AssemblyName>CSharpToUmlConverter</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -45,9 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Generator.cs" />
+    <Compile Include="Converter.cs" />
     <Compile Include="ClassInfo.cs" />
-    <Compile Include="Exctensions.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

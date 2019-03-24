@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace UmlGenerator
+namespace CSharpToUmlConverter
 {
-    public static class Exctensions
+    public static class Extensions
     {
         public static string TrimWhitespace(this string text)
         {
@@ -23,9 +23,6 @@ namespace UmlGenerator
         {
             return text?.Replace("<", string.Empty).Replace(">", string.Empty);
         }
-
-
-
 
         public static string MyToString(this List<ClassInfo> infos)
         {

@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace UmlGenerator
+namespace CSharpToUmlConverter
 {
-    public class Generator
+    public class Converter
     {
         public void Start(string root, string outputPath)
         {
@@ -24,7 +24,7 @@ namespace UmlGenerator
 
             Console.WriteLine($"found {files.Count} files");
 
-            int index = 0;
+            var index = 0;
             var nodes = new List<Node>();
 
             foreach (var file in files)
@@ -39,40 +39,24 @@ namespace UmlGenerator
                     nodes.Add(Parse(matches[i].Value));
                 }
 
-                foreach (var node in nodes)
-                {
-                    Console.WriteLine($"{index}{new string('-', 200)}");
-                    Console.WriteLine("Class:");
-                    Console.WriteLine(node.Class.ClassName);
-                    Console.WriteLine("Generics:");
-                    Console.WriteLine(node.Class.ClassGenerics ?? "null");
-                    Console.WriteLine("Parents:");
-                    if (node.Parents != null)
-                    {
-                        foreach (var nodeParent in node.Parents)
-                        {
-                            var generics = nodeParent.ClassGenerics != null
-                                ? $"has generics {nodeParent.ClassGenerics}"
-                                : "";
-                            Console.WriteLine($"{nodeParent.ClassName} {generics}");
-                        }
-                    }
-
-                    Console.WriteLine("Constraints:");
-                    Console.WriteLine(node.Constraints ?? "null");
-                    Console.WriteLine();
-                }
-
+                Output(nodes, index);
                 index++;
             }
-
-            var uml = "";
-
+            
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
             }
 
+            Console.WriteLine("Generating...");
+            var uml = BuildUml(nodes);
+            File.AppendAllLines(outputPath, new List<string> { uml });
+            Console.WriteLine("Successful generated");
+        }
+
+        private string BuildUml(IEnumerable<Node> nodes)
+        {
+            var uml = string.Empty;
             foreach (var node in nodes)
             {
                 if (node.Parents != null)
@@ -80,14 +64,38 @@ namespace UmlGenerator
                     foreach (var nodeParent in node.Parents)
                     {
                         var generics = nodeParent.ClassGenerics != null ? $":{nodeParent.ClassGenerics}" : string.Empty;
-                        uml += $"{node.Class.ClassName}--|>{nodeParent.ClassName}{generics}\r\n";
+                        uml += $"{node.Class.ClassName}--|>{nodeParent.ClassName}{generics}{Environment.NewLine}";
                     }
                 }
             }
+            return uml;
+        }
 
-            Console.WriteLine("Generating...");
-            File.AppendAllLines(outputPath, new List<string> { uml });
-            Console.WriteLine("Successful generated");
+        private void Output(List<Node> nodes, int index)
+        {
+            foreach (var node in nodes)
+            {
+                Console.WriteLine($"{index}{new string('-', 200)}");
+                Console.WriteLine("Class:");
+                Console.WriteLine(node.Class.ClassName);
+                Console.WriteLine("Generics:");
+                Console.WriteLine(node.Class.ClassGenerics ?? "null");
+                Console.WriteLine("Parents:");
+                if (node.Parents != null)
+                {
+                    foreach (var nodeParent in node.Parents)
+                    {
+                        var generics = nodeParent.ClassGenerics != null
+                            ? $"has generics {nodeParent.ClassGenerics}"
+                            : "";
+                        Console.WriteLine($"{nodeParent.ClassName} {generics}");
+                    }
+                }
+
+                Console.WriteLine("Constraints:");
+                Console.WriteLine(node.Constraints ?? "null");
+                Console.WriteLine();
+            }
         }
 
         private Node Parse(string a)
