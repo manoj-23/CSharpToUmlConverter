@@ -23,7 +23,7 @@ namespace UmlGenerator
                     var info = new ClassInfo();
                     if (a.Contains('<') && a.Contains('>')) //has generics
                     {
-                        if (a.Contains(',')) //has colons
+                        if (a.Contains(',')) //has commas
                         {
                             if (a.IndexOf('<') < a.IndexOf(',')) // first parent has generics
                             {
@@ -36,25 +36,25 @@ namespace UmlGenerator
                             {
                                 info.ClassName = a.Substring(0, a.IndexOf(','));
                                 info.ClassGenerics = null;
-                                a = a.Remove(0, a.IndexOf(',') +1 );
+                                a = a.Remove(0, a.IndexOf(',') + 1);
                             }
                         }
-                        else // haven`t colons
+                        else // haven`t commas
                         {
                             info.ClassName = a.Substring(0, a.IndexOf('<'));
-                            info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') - a.IndexOf('<'));
+                            info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') + 1 - a.IndexOf('<'));
                             a = a.Remove(0, a.IndexOf('>') + 1);
                         }
                     } // haven`t generics
                     else
                     {
-                        if (a.Contains(','))
+                        if (a.Contains(',')) //has commas
                         {
                             info.ClassName = a.Substring(0, a.IndexOf(','));
                             info.ClassGenerics = null;
                             a = a.Remove(0, a.IndexOf(',') + 1);
                         }
-                        else
+                        else // haven`t commas
                         {
                             info.ClassName = a;
                             a = string.Empty;

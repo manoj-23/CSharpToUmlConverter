@@ -8,11 +8,6 @@ namespace UmlGenerator
 {
     public class Generator
     {
-        /// <summary>
-        /// key is inheritor, value is list of parents
-        /// </summary>
-        private Dictionary<string, List<string>> inheritanceDictionary = new Dictionary<string, List<string>>();
-
         public void Start(string root, string outputPath)
         {
             var files = new List<string>();
@@ -30,6 +25,7 @@ namespace UmlGenerator
             Console.WriteLine($"found {files.Count} files");
 
             int index = 0;
+            var nodes = new List<Node>();
 
             foreach (var file in files)
             {
@@ -38,7 +34,6 @@ namespace UmlGenerator
                 var regularExpression = new Regex(Node.Template);
                 var matches = regularExpression.Matches(csFile);
 
-                var nodes = new List<Node>();
                 for (var i = 0; i < matches.Count; i++)
                 {
                     nodes.Add(Parse(matches[i].Value));
@@ -66,9 +61,6 @@ namespace UmlGenerator
                     Console.WriteLine("Constraints:");
                     Console.WriteLine(node.Constraints ?? "null");
                     Console.WriteLine();
-
-                    inheritanceDictionary[node.Class.ClassName] = node.Parents?.Select(_ => _.ClassName).ToList();
-
                 }
 
                 index++;
@@ -81,16 +73,16 @@ namespace UmlGenerator
                 File.Delete(outputPath);
             }
 
-            foreach (var inheritor in inheritanceDictionary.Keys)
+            foreach (var node in nodes)
             {
-                if (inheritanceDictionary[inheritor] != null)
+                if (node.Parents != null)
                 {
-                    foreach (var parent in inheritanceDictionary[inheritor])
+                    foreach (var nodeParent in node.Parents)
                     {
-                        uml += $"{inheritor}--|>{parent}\r\n";
+                        var generics = nodeParent.ClassGenerics != null ? $":{nodeParent.ClassGenerics}" : string.Empty;
+                        uml += $"{node.Class.ClassName}--|>{nodeParent.ClassName}{generics}\r\n";
                     }
                 }
-
             }
 
             Console.WriteLine("Generating...");
