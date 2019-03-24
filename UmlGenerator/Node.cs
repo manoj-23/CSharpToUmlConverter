@@ -17,19 +17,56 @@ namespace ConsoleApp1
             set
             {
                 var a = value.TrimColon()?.Trim(' ');
-
-                Parents = a.Split(',').Select(_ =>
+                var parents = new List<ClassInfo>();
+                void parse()
                 {
-                    if (_.Contains("<") && _.Contains(">"))
+                    var info = new ClassInfo();
+                    if (a.Contains('<') && a.Contains('>')) //has generics
                     {
-
-                        return new ClassInfo { ClassName = _.Substring(0, _.IndexOf('<')), ClassGenerics = _.Substring(_.IndexOf('<'), _.IndexOf('>') + 1 - _.IndexOf('<')) };
-                    }
+                        if (a.Contains(',')) //has colons
+                        {
+                            if (a.IndexOf('<') < a.IndexOf(',')) // first parent has generics
+                            {
+                                info.ClassName = a.Substring(0, a.IndexOf('<'));
+                                info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') + 1 - a.IndexOf('<'));
+                                a = a.Remove(0, a.IndexOf('>') + 1);
+                                a = a.Remove(0, a.IndexOf(',') + 1);
+                            }
+                            else // first parent haven`t generics
+                            {
+                                info.ClassName = a.Substring(0, a.IndexOf(','));
+                                info.ClassGenerics = null;
+                                a = a.Remove(0, a.IndexOf(',') +1 );
+                            }
+                        }
+                        else // haven`t colons
+                        {
+                            info.ClassName = a.Substring(0, a.IndexOf('<'));
+                            info.ClassGenerics = a.Substring(a.IndexOf('<'), a.IndexOf('>') - a.IndexOf('<'));
+                            a = a.Remove(0, a.IndexOf('>') + 1);
+                        }
+                    } // haven`t generics
                     else
                     {
-                        return new ClassInfo { ClassName = _ };
+                        if (a.Contains(','))
+                        {
+                            info.ClassName = a.Substring(0, a.IndexOf(','));
+                            info.ClassGenerics = null;
+                            a = a.Remove(0, a.IndexOf(',') + 1);
+                        }
+                        else
+                        {
+                            info.ClassName = a;
+                            a = string.Empty;
+                            info.ClassGenerics = null;
+                        }
                     }
-                }).ToList();
+                    parents.Add(info);
+                    if (a.Length > 0)
+                        parse();
+                }
+                parse();
+                Parents = parents;
             }
         }
 

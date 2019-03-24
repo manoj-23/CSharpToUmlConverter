@@ -30,7 +30,7 @@ namespace ConsoleApp1
             Console.WriteLine($"found {files.Count} files");
 
             int index = 0;
-            
+
             foreach (var file in files)
             {
                 var stream = File.OpenText(file);
@@ -52,18 +52,22 @@ namespace ConsoleApp1
                     Console.WriteLine("Generics:");
                     Console.WriteLine(node.Class.ClassGenerics ?? "null");
                     Console.WriteLine("Parents:");
-                    foreach (var nodeParent in node.Parents)
+                    if (node.Parents != null)
                     {
-                        var generics = nodeParent.ClassGenerics != null
-                            ? $"has generics {nodeParent.ClassGenerics}"
-                            : "";
-                        Console.WriteLine($"{nodeParent.ClassName} {generics}");
+                        foreach (var nodeParent in node.Parents)
+                        {
+                            var generics = nodeParent.ClassGenerics != null
+                                ? $"has generics {nodeParent.ClassGenerics}"
+                                : "";
+                            Console.WriteLine($"{nodeParent.ClassName} {generics}");
+                        }
                     }
+
                     Console.WriteLine("Constraints:");
                     Console.WriteLine(node.Constraints ?? "null");
                     Console.WriteLine();
 
-                    inheritanceDictionary[node.Class.ClassName] = node.Parents.Select(_ => _.ClassName).ToList();
+                    inheritanceDictionary[node.Class.ClassName] = node.Parents?.Select(_ => _.ClassName).ToList();
 
                 }
 
@@ -72,18 +76,26 @@ namespace ConsoleApp1
 
             var uml = "";
 
+            if (File.Exists(outputPath))
+            {
+                File.Delete(outputPath);
+            }
+
             foreach (var inheritor in inheritanceDictionary.Keys)
             {
-                foreach (var parent in inheritanceDictionary[inheritor])
+                if (inheritanceDictionary[inheritor] != null)
                 {
-                    uml += $"{inheritor}--|>{parent}\r\n";
+                    foreach (var parent in inheritanceDictionary[inheritor])
+                    {
+                        uml += $"{inheritor}--|>{parent}\r\n";
+                    }
                 }
+
             }
 
             Console.WriteLine("Generating...");
             File.AppendAllLines(outputPath, new List<string> { uml });
             Console.WriteLine("Successful generated");
-            Console.Clear();
         }
 
         private Node Parse(string a)
