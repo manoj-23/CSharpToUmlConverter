@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace ConsoleApp1
+namespace UmlGenerator
 {
     public class Node
     {
