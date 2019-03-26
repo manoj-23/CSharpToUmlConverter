@@ -27,7 +27,9 @@ namespace CSharpToUmlConverter
             var index = 0;
             var nodes = new List<Node>();
 
-           // files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationController\Repositories\DbActors\DbWriterManagerActor.cs" };
+            files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\Actors\RevisionHistoryActor.cs" };
+
+            Console.WriteLine("Generating...");
             foreach (var file in files)
             {
                 var stream = File.OpenText(file);
@@ -40,7 +42,7 @@ namespace CSharpToUmlConverter
                     nodes.Add(Parse(matches[i].Value));
                 }
 
-                //Output(nodes, index);
+                Output(nodes, index);
                 index++;
             }
 
@@ -48,8 +50,7 @@ namespace CSharpToUmlConverter
             {
                 File.Delete(outputPath);
             }
-
-            Console.WriteLine("Generating...");
+            
             var uml = BuildUml(nodes);
             File.AppendAllLines(outputPath, new List<string> { uml });
             Console.WriteLine("Successful generated");

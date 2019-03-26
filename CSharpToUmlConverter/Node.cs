@@ -6,8 +6,8 @@ namespace CSharpToUmlConverter
     public class Node
     {
         public static readonly string Template = "(?!\") * class ([^=\"]|\n)*?(?={)";
-        
-        
+
+
         public ClassInfo Class { get; set; }
 
         public List<ClassInfo> Parents { get; set; }
@@ -18,7 +18,26 @@ namespace CSharpToUmlConverter
             {
                 var a = value.TrimColon()?.Trim(' ');
                 var parents = new List<ClassInfo>();
-                void parse()
+
+                string GetGenerics()
+                {
+                    var opening = 0;
+                    var closing = 0;
+                    var index = 0;
+                    foreach (var symbol in a)
+                    {
+                        if (symbol.Equals('<'))
+                            opening++;
+                        if (symbol.Equals('>'))
+                            closing++;
+                        if (opening == closing)
+                            break;
+                        index++;
+                    }
+                    return a.Substring(0, index + 1);
+                }
+
+                void Parse()
                 {
                     var info = new ClassInfo();
                     if (a.Contains('<') && a.Contains('>')) //has generics
@@ -29,26 +48,8 @@ namespace CSharpToUmlConverter
                             {
                                 info.ClassName = a.Substring(0, a.IndexOf('<'));
                                 a = a.Remove(0, a.IndexOf('<'));
-                                //    ILazyLoadingItem<Tuple<Guid, Guid>, Tuple<Guid, Guid>>, ILazyLoadingItem<Tuple<Guid, Guid>, Tuple<Guid, Guid>>, 
-
-                                var opening = 0;
-                                var closing = 0;
-                                var index = 0;
-                                foreach (var symbol in a)
-                                {
-                                    if (symbol.Equals('<'))
-                                        opening++;
-                                    if (symbol.Equals('>'))
-                                        closing++;
-
-                                    if (opening == closing)
-                                        break;
-
-                                    index++;
-                                }
-
-                                info.ClassGenerics = a.Substring(0, index + 1);
-                                a = a.Remove(0, index + 1);
+                                info.ClassGenerics = GetGenerics();
+                                a = a.Replace(info.ClassGenerics, string.Empty);
                                 a = a.Remove(0, a.IndexOf(',') + 1);
                             }
                             else // first parent haven`t generics
@@ -62,8 +63,8 @@ namespace CSharpToUmlConverter
                         {
                             info.ClassName = a.Substring(0, a.IndexOf('<'));
                             a = a.Remove(0, a.IndexOf('<'));
-                            info.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1 - a.IndexOf('<'));
-                            a = a.Remove(0, a.IndexOf('>') + 1);
+                            info.ClassGenerics = GetGenerics();
+                            a = a.Replace(info.ClassGenerics, string.Empty);
                         }
                     } // haven`t generics
                     else
@@ -83,9 +84,9 @@ namespace CSharpToUmlConverter
                     }
                     parents.Add(info);
                     if (a.Length > 0)
-                        parse();
+                        Parse();
                 }
-                parse();
+                Parse();
                 Parents = parents;
             }
         }
