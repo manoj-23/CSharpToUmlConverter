@@ -14,7 +14,7 @@ namespace CSharpToUmlConverter
 
             void AddFiles(string directory)
             {
-                files.AddRange(Directory.GetFiles(directory));
+                files.AddRange(Directory.GetFiles(directory).Where(_ => _.EndsWith(".cs")));
                 foreach (var subDir in Directory.GetDirectories(directory))
                 {
                     AddFiles(subDir);
@@ -27,6 +27,7 @@ namespace CSharpToUmlConverter
             var index = 0;
             var nodes = new List<Node>();
 
+           // files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationController\Repositories\DbActors\DbWriterManagerActor.cs" };
             foreach (var file in files)
             {
                 var stream = File.OpenText(file);
@@ -39,10 +40,10 @@ namespace CSharpToUmlConverter
                     nodes.Add(Parse(matches[i].Value));
                 }
 
-                Output(nodes, index);
+                //Output(nodes, index);
                 index++;
             }
-            
+
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
@@ -100,10 +101,18 @@ namespace CSharpToUmlConverter
 
         private Node Parse(string a)
         {
-            a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
+            if (a.Contains("//"))
+            {
+                a = Regex.Replace(a, @"(?=//).*(\r\n)", String.Empty);
+            }
+            if (a.Contains("/*") && a.Contains("*/"))
+            {
+                a = Regex.Replace(a, @"(?=/\*).*?(?<=\*/)", String.Empty);
+            }
+
+            a = a.Replace("class", string.Empty).Replace("\r\n", string.Empty);
             var node = new Node();
 
-            // class Abc<T, T1, T2> : Base1<T2, T3>, Base2<T2, T1> where T1 : Base where T2 : new()
             if (a.Contains("where")) //has constraint
             {
                 if (a.IndexOf(':') < a.IndexOf("where", StringComparison.Ordinal)) //class has inheritance 

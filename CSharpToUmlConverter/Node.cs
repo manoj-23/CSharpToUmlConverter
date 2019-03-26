@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Data;
 
 namespace CSharpToUmlConverter
 {
     public class Node
     {
-        public static readonly string Template = "(?!\") * class ([^=\"]|\n)*?{";
+        public static readonly string Template = "(?!\") * class ([^=\"]|\n)*?(?={)";
         
         
         public ClassInfo Class { get; set; }
