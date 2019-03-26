@@ -27,7 +27,7 @@ namespace CSharpToUmlConverter
             var index = 0;
             var nodes = new List<Node>();
 
-            files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\Actors\RevisionHistoryActor.cs" };
+            //files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ConsoleManager\ConsoleArgumentParser.cs" };
 
             Console.WriteLine("Generating...");
             foreach (var file in files)
@@ -42,7 +42,7 @@ namespace CSharpToUmlConverter
                     nodes.Add(Parse(matches[i].Value));
                 }
 
-                Output(nodes, index);
+               // Output(nodes, index);
                 index++;
             }
 
@@ -111,7 +111,7 @@ namespace CSharpToUmlConverter
                 a = Regex.Replace(a, @"(?=/\*).*?(?<=\*/)", String.Empty);
             }
 
-            a = a.Replace("class", string.Empty).Replace("\r\n", string.Empty);
+            a = a.Replace("class", string.Empty).Replace("\r\n", string.Empty).Replace("\n\t", String.Empty);
             var node = new Node();
 
             if (a.Contains("where")) //has constraint
