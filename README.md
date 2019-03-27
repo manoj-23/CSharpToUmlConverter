@@ -1,7 +1,7 @@
 # CSharpToUmlConverter
-Automatically generates UML diagram from C# source code.
-CSharpToUmlConverter is console applicattion.
+Unility for convert C# to UML diagram.
+Console application.
 
-Takes 2 arguments: 1) root directory with source code *.cs files; 2) output path to result uml diagram file
-For example:
+To use: CSharpToUmlConverter.exe <directoryWithSourceFiles> <pathToResultUmlFile> 
+Example:
 C:\CSharpToUmlConverter.exe "C:\Work\MyProject\ViewModels" "C:\Work\ViewModelsUml.txt"
