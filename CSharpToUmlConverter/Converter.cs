@@ -27,13 +27,22 @@ namespace CSharpToUmlConverter
             var index = 0;
             var nodes = new List<Node>();
 
-            //files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio\ConsoleManager\ConsoleArgumentParser.cs" };
+           // files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio.Common\Interop\user32.cs" };
 
             Console.WriteLine("Generating...");
             foreach (var file in files)
             {
                 var stream = File.OpenText(file);
                 var csFile = stream.ReadToEnd();
+                if (csFile.Contains("//"))
+                {
+                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n)", String.Empty);
+                }
+                if (csFile.Contains("/*") && csFile.Contains("*/"))
+                {
+                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n)*?(?<=\*/)", String.Empty);
+                }
+
                 var regularExpression = new Regex(Node.Template);
                 var matches = regularExpression.Matches(csFile);
 
@@ -42,7 +51,9 @@ namespace CSharpToUmlConverter
                     nodes.Add(Parse(matches[i].Value));
                 }
 
-               // Output(nodes, index);
+#if verbose
+                Output(nodes, index);
+#endif
                 index++;
             }
 
@@ -50,7 +61,7 @@ namespace CSharpToUmlConverter
             {
                 File.Delete(outputPath);
             }
-            
+
             var uml = BuildUml(nodes);
             File.AppendAllLines(outputPath, new List<string> { uml });
             Console.WriteLine("Successful generated");
@@ -99,19 +110,12 @@ namespace CSharpToUmlConverter
                 Console.WriteLine();
             }
         }
+        
 
         private Node Parse(string a)
         {
-            if (a.Contains("//"))
-            {
-                a = Regex.Replace(a, @"(?=//).*(\r\n)", String.Empty);
-            }
-            if (a.Contains("/*") && a.Contains("*/"))
-            {
-                a = Regex.Replace(a, @"(?=/\*).*?(?<=\*/)", String.Empty);
-            }
-
             a = a.Replace("class", string.Empty).Replace("\r\n", string.Empty).Replace("\n\t", String.Empty);
+            a = a.Trim("\r").Trim("\n").Trim("\t");
             var node = new Node();
 
             if (a.Contains("where")) //has constraint

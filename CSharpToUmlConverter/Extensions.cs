@@ -41,5 +41,11 @@ namespace CSharpToUmlConverter
             return res;
         }
 
+        public static string Trim(this string text, string toTrim)
+        {
+            return text?.Replace(toTrim, string.Empty);
+        }
+
+
     }
 }
