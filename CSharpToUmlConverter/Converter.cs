@@ -27,7 +27,7 @@ namespace CSharpToUmlConverter
             var index = 0;
             var nodes = new List<Node>();
 
-           // files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.AutomationStudio.Common\Interop\user32.cs" };
+           //files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.Vlc.Wpf\Properties\Annotations.cs" };
 
             Console.WriteLine("Generating...");
             foreach (var file in files)
@@ -36,11 +36,11 @@ namespace CSharpToUmlConverter
                 var csFile = stream.ReadToEnd();
                 if (csFile.Contains("//"))
                 {
-                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n)", String.Empty);
+                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n|\n)", String.Empty);
                 }
                 if (csFile.Contains("/*") && csFile.Contains("*/"))
                 {
-                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n)*?(?<=\*/)", String.Empty);
+                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n|\n)*?(?<=\*/)", String.Empty);
                 }
 
                 var regularExpression = new Regex(Node.Template);
