@@ -1,5 +1,5 @@
-# CSharpToUmlConverter
-Unility for convert C# to UML diagram.
+# Unility for convert C# to UML diagram.
+
 Console application.
 
 To use: 
