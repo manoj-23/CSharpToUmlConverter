@@ -80,6 +80,10 @@ namespace CSharpToUmlConverter
                         uml += $"{node.Class.ClassName}--|>{nodeParent.ClassName}{generics}{Environment.NewLine}";
                     }
                 }
+                else
+                {
+                    uml += $"class {node.Class.ClassName}{Environment.NewLine}";
+                }
             }
             return uml;
         }
