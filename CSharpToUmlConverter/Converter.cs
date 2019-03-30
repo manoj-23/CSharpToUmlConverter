@@ -8,68 +8,36 @@ namespace CSharpToUmlConverter
 {
     public class Converter
     {
+        private readonly List<string> files = new List<string>();
+        private string root;
+        private readonly List<Node> nodes = new List<Node>();
+        private string uml = string.Empty;
+
         public void Start(string root, string outputPath)
         {
-            var files = new List<string>();
-
-            void AddFiles(string directory)
-            {
-                files.AddRange(Directory.GetFiles(directory).Where(_ => _.EndsWith(".cs")));
-                foreach (var subDir in Directory.GetDirectories(directory))
-                {
-                    AddFiles(subDir);
-                }
-            }
-            AddFiles(root);
-
+            this.root = root;
+            GetFiles();
             Console.WriteLine($"found {files.Count} files");
-
-            var index = 0;
-            var nodes = new List<Node>();
-
-           //files = new List<string>() { @"C:\Work\Leapwork\Main\LeapTest.Vlc.Wpf\Properties\Annotations.cs" };
-
             Console.WriteLine("Generating...");
-            foreach (var file in files)
-            {
-                var stream = File.OpenText(file);
-                var csFile = stream.ReadToEnd();
-                if (csFile.Contains("//"))
-                {
-                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n|\n)", String.Empty);
-                }
-                if (csFile.Contains("/*") && csFile.Contains("*/"))
-                {
-                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n|\n)*?(?<=\*/)", String.Empty);
-                }
 
-                var regularExpression = new Regex(Node.Template);
-                var matches = regularExpression.Matches(csFile);
-
-                for (var i = 0; i < matches.Count; i++)
-                {
-                    nodes.Add(Parse(matches[i].Value));
-                }
-
+            Parse();
+            
 #if verbose
-                Output(nodes, index);
+            Report();
 #endif
-                index++;
-            }
 
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
             }
 
-            var uml = BuildUml(nodes);
+            BuildUml();
             File.AppendAllLines(outputPath, new List<string> { uml });
             Console.WriteLine("Successful generated");
         }
 
-        private string BuildUml(IEnumerable<Node> nodes)
+        private void BuildUml()
         {
-            var uml = string.Empty;
             foreach (var node in nodes)
             {
                 if (node.Parents != null)
@@ -85,14 +53,29 @@ namespace CSharpToUmlConverter
                     uml += $"class {node.Class.ClassName}{Environment.NewLine}";
                 }
             }
-            return uml;
         }
 
-        private void Output(List<Node> nodes, int index)
+        private void GetFiles()
+        {
+            files = new List<string>();
+
+            void AddFiles(string directory)
+            {
+                files.AddRange(Directory.GetFiles(directory).Where(_ => _.EndsWith(".cs")));
+                foreach (var subDir in Directory.GetDirectories(directory))
+                {
+                    AddFiles(subDir);
+                }
+            }
+
+            AddFiles(root);
+        }
+
+        private void Report()
         {
             foreach (var node in nodes)
             {
-                Console.WriteLine($"{index}{new string('-', 200)}");
+                Console.WriteLine($"{new string('-', 200)}");
                 Console.WriteLine("Class:");
                 Console.WriteLine(node.Class.ClassName);
                 Console.WriteLine("Generics:");
@@ -114,7 +97,31 @@ namespace CSharpToUmlConverter
                 Console.WriteLine();
             }
         }
-        
+
+        private void Parse()
+        {
+            foreach (var file in files)
+            {
+                var stream = File.OpenText(file);
+                var csFile = stream.ReadToEnd();
+                if (csFile.Contains("//"))
+                {
+                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n|\n)", String.Empty);
+                }
+                if (csFile.Contains("/*") && csFile.Contains("*/"))
+                {
+                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n|\n)*?(?<=\*/)", String.Empty);
+                }
+
+                var regularExpression = new Regex(Node.Template);
+                var matches = regularExpression.Matches(csFile);
+
+                for (var i = 0; i < matches.Count; i++)
+                {
+                    nodes.Add(Parse(matches[i].Value));
+                }
+            }
+        }
 
         private Node Parse(string a)
         {
@@ -209,6 +216,7 @@ namespace CSharpToUmlConverter
 
             return node;
         }
+
         public Node Parse1(string a)
         {
             a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
@@ -243,6 +251,7 @@ namespace CSharpToUmlConverter
 
             return node;
         }
+
     }
 }
 
