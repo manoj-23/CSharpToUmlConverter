@@ -5,20 +5,19 @@ namespace CSharpToUmlConverter
 {
     public class Node
     {
-        public static readonly string Template = "(?!\") * class ([^=\"]|\n)*?(?={)";
+        public static readonly string Template = ".* (class|interface) ([^\"]|\n)*?(?={)";
 
 
-        public ClassInfo Class { get; set; }
+        public StereotypeInfo Stereotype { get; set; }
 
-        public List<ClassInfo> Parents { get; set; }
+        public List<StereotypeInfo> Parents { get; set; }
 
         public string ParentsFromString
         {
             set
             {
-                var a = value.TrimColon()?.Trim(' ');
-                var parents = new List<ClassInfo>();
-
+                var a = value.TrimColons()?.Trim(' ');
+                var parents = new List<StereotypeInfo>();
                 string GetGenerics()
                 {
                     var opening = 0;
@@ -39,47 +38,47 @@ namespace CSharpToUmlConverter
 
                 void Parse()
                 {
-                    var info = new ClassInfo();
+                    var info = new StereotypeInfo();
                     if (a.Contains('<') && a.Contains('>')) //has generics
                     {
                         if (a.Contains(',')) //has commas
                         {
                             if (a.IndexOf('<') < a.IndexOf(',')) // first parent has generics
                             {
-                                info.ClassName = a.Substring(0, a.IndexOf('<'));
+                                info.Name = a.Substring(0, a.IndexOf('<'));
                                 a = a.Remove(0, a.IndexOf('<'));
-                                info.ClassGenerics = GetGenerics();
-                                a = a.Replace(info.ClassGenerics, string.Empty);
+                                info.Generics = GetGenerics();
+                                a = a.Replace(info.Generics, string.Empty);
                                 a = a.Remove(0, a.IndexOf(',') + 1);
                             }
                             else // first parent haven`t generics
                             {
-                                info.ClassName = a.Substring(0, a.IndexOf(','));
-                                info.ClassGenerics = null;
+                                info.Name = a.Substring(0, a.IndexOf(','));
+                                info.Generics = null;
                                 a = a.Remove(0, a.IndexOf(',') + 1);
                             }
                         }
                         else // haven`t commas
                         {
-                            info.ClassName = a.Substring(0, a.IndexOf('<'));
+                            info.Name = a.Substring(0, a.IndexOf('<'));
                             a = a.Remove(0, a.IndexOf('<'));
-                            info.ClassGenerics = GetGenerics();
-                            a = a.Replace(info.ClassGenerics, string.Empty);
+                            info.Generics = GetGenerics();
+                            a = a.Replace(info.Generics, string.Empty);
                         }
                     } // haven`t generics
                     else
                     {
                         if (a.Contains(',')) //has commas
                         {
-                            info.ClassName = a.Substring(0, a.IndexOf(','));
-                            info.ClassGenerics = null;
+                            info.Name = a.Substring(0, a.IndexOf(','));
+                            info.Generics = null;
                             a = a.Remove(0, a.IndexOf(',') + 1);
                         }
                         else // haven`t commas
                         {
-                            info.ClassName = a;
+                            info.Name = a;
                             a = string.Empty;
-                            info.ClassGenerics = null;
+                            info.Generics = null;
                         }
                     }
                     parents.Add(info);
@@ -101,8 +100,8 @@ namespace CSharpToUmlConverter
 
         public Node()
         {
-            Class = new ClassInfo();
-            Parents = new List<ClassInfo>();
+            Stereotype = new StereotypeInfo();
+            Parents = new List<StereotypeInfo>();
         }
     }
 }

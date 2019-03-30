@@ -19,9 +19,9 @@ namespace CSharpToUmlConverter
             GetFiles();
             Console.WriteLine($"found {files.Count} files");
             Console.WriteLine("Generating...");
-
-            Parse();
             
+            Parse();
+
 #if verbose
             Report();
 #endif
@@ -36,28 +36,32 @@ namespace CSharpToUmlConverter
             Console.WriteLine("Successful generated");
         }
 
+
         private void BuildUml()
         {
             foreach (var node in nodes)
             {
+                var stereotype = node.Stereotype.Type.GetDescription();
+
                 if (node.Parents != null)
                 {
-                    foreach (var nodeParent in node.Parents)
+                    foreach (var parent in node.Parents)
                     {
-                        var generics = nodeParent.ClassGenerics != null ? $":{nodeParent.ClassGenerics}" : string.Empty;
-                        uml += $"{node.Class.ClassName}--|>{nodeParent.ClassName}{generics}{Environment.NewLine}";
+                        var generics = parent.Generics != null ? $":{parent.Generics}" : string.Empty;
+                        var prefix = node.Stereotype.Type != StereotypeType.Class ? $"{stereotype} " : string.Empty;
+                        uml += $"{prefix}{node.Stereotype.Name}--|>{parent.Name}{generics}{Environment.NewLine}";
                     }
                 }
                 else
                 {
-                    uml += $"class {node.Class.ClassName}{Environment.NewLine}";
+                    uml += $"{stereotype} {node.Stereotype.Name}{Environment.NewLine}";
                 }
             }
         }
 
         private void GetFiles()
         {
-            files = new List<string>();
+            files.Clear();
 
             void AddFiles(string directory)
             {
@@ -76,19 +80,18 @@ namespace CSharpToUmlConverter
             foreach (var node in nodes)
             {
                 Console.WriteLine($"{new string('-', 200)}");
-                Console.WriteLine("Class:");
-                Console.WriteLine(node.Class.ClassName);
+                Console.WriteLine("Stereotype:");
+                Console.WriteLine(node.Stereotype.Name);
                 Console.WriteLine("Generics:");
-                Console.WriteLine(node.Class.ClassGenerics ?? "null");
+                Console.WriteLine(node.Stereotype.Generics ?? "null");
                 Console.WriteLine("Parents:");
                 if (node.Parents != null)
                 {
                     foreach (var nodeParent in node.Parents)
                     {
-                        var generics = nodeParent.ClassGenerics != null
-                            ? $"has generics {nodeParent.ClassGenerics}"
-                            : "";
-                        Console.WriteLine($"{nodeParent.ClassName} {generics}");
+                        var generics = nodeParent.Generics != null
+                            ? $"has generics {nodeParent.Generics}" : "";
+                        Console.WriteLine($"{nodeParent.Name} {generics}");
                     }
                 }
 
@@ -104,14 +107,7 @@ namespace CSharpToUmlConverter
             {
                 var stream = File.OpenText(file);
                 var csFile = stream.ReadToEnd();
-                if (csFile.Contains("//"))
-                {
-                    csFile = Regex.Replace(csFile, @"(?=//).*(\r\n|\n)", String.Empty);
-                }
-                if (csFile.Contains("/*") && csFile.Contains("*/"))
-                {
-                    csFile = Regex.Replace(csFile, @"/\*(.|\r\n|\n)*?(?<=\*/)", String.Empty);
-                }
+                csFile = csFile.TrimCommentedCode();
 
                 var regularExpression = new Regex(Node.Template);
                 var matches = regularExpression.Matches(csFile);
@@ -125,8 +121,14 @@ namespace CSharpToUmlConverter
 
         private Node Parse(string a)
         {
-            a = a.Replace("class", string.Empty).Replace("\r\n", string.Empty).Replace("\n\t", String.Empty);
-            a = a.Trim("\r").Trim("\n").Trim("\t");
+            var isClass = Regex.IsMatch(a, "^(.|\n)*?class .*?where") || !a.Contains("where") && a.Contains("class");
+            var isInterface = a.Contains("interface");
+            var isAbstract = a.Contains("abstract");
+
+            a = isClass || isAbstract ? a.Remove(0, a.IndexOf("class", StringComparison.Ordinal) + "class".Length) : a;
+            a = isInterface ? a.Remove(0, a.IndexOf("interface", StringComparison.Ordinal) + "interface".Length) : a;
+
+            a = a.Trim("\r\n").Trim("\n\t").Trim("\r").Trim("\n").Trim("\t");
             var node = new Node();
 
             if (a.Contains("where")) //has constraint
@@ -135,17 +137,17 @@ namespace CSharpToUmlConverter
                 {
                     if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf('<'));
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
-                        node.Class.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1);
+                        node.Stereotype.Generics = a.Substring(0, a.IndexOf('>') + 1);
                         a = a.Remove(0, a.IndexOf('>'));
                         a = a.Remove(0, a.IndexOf(':'));
                     }
                     else // class haven`t generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf(':'));
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf(':'));
                         a = a.Remove(0, a.IndexOf(':'));
-                        node.Class.ClassGenerics = null;
+                        node.Stereotype.Generics = null;
                     }
 
                     node.ParentsFromString = a.Substring(0, a.IndexOf("where", StringComparison.Ordinal));
@@ -157,16 +159,16 @@ namespace CSharpToUmlConverter
                     if (a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('<') && a.Substring(0, a.IndexOf("where", StringComparison.Ordinal)).Contains('>')
                     ) // class has generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf('<'));
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
-                        node.Class.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1);
+                        node.Stereotype.Generics = a.Substring(0, a.IndexOf('>') + 1);
                         a = a.Remove(0, a.IndexOf('>'));
                         a = a.Remove(0, a.IndexOf("where", StringComparison.Ordinal));
                     }
                     else // class haven`t generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf("where", StringComparison.Ordinal));
-                        node.Class.ClassGenerics = null;
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf("where", StringComparison.Ordinal));
+                        node.Stereotype.Generics = null;
                         a = a.Remove(0, a.IndexOf("where", StringComparison.Ordinal));
                     }
 
@@ -180,16 +182,16 @@ namespace CSharpToUmlConverter
                 {
                     if (a.Substring(0, a.IndexOf(':')).Contains('<') && a.Substring(0, a.IndexOf(':')).Contains('>')) // class has generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf('<'));
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
-                        node.Class.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1);
+                        node.Stereotype.Generics = a.Substring(0, a.IndexOf('>') + 1);
                         a = a.Remove(0, a.IndexOf('>'));
                         a = a.Remove(0, a.IndexOf(':'));
                     }
                     else // class haven`t generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf(':'));
-                        node.Class.ClassGenerics = null;
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf(':'));
+                        node.Stereotype.Generics = null;
                         a = a.Remove(0, a.IndexOf(':'));
                     }
 
@@ -200,58 +202,82 @@ namespace CSharpToUmlConverter
                 {
                     if (a.Contains('<') && a.Contains('>')) // class has generics
                     {
-                        node.Class.ClassName = a.Substring(0, a.IndexOf('<'));
+                        node.Stereotype.Name = a.Substring(0, a.IndexOf('<'));
                         a = a.Remove(0, a.IndexOf('<'));
-                        node.Class.ClassGenerics = a.Substring(0, a.IndexOf('>') + 1);
+                        node.Stereotype.Generics = a.Substring(0, a.IndexOf('>') + 1);
                     }
                     else // class haven`t generics
                     {
-                        node.Class.ClassName = a;
-                        node.Class.ClassGenerics = null;
+                        node.Stereotype.Name = a;
+                        node.Stereotype.Generics = null;
                         node.Parents = null;
                         node.Constraints = null;
                     }
                 }
             }
 
-            return node;
-        }
-
-        public Node Parse1(string a)
-        {
-            a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
-            var node = new Node();
-
-
-
-            // has constraint, class has inheritance, class has generics
-            var assertion = "(?=^.*<.*> *:.*where).*";
-            //  Abc<T>  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class
-            var className = @"^.*?(?=<)";
-            var classGenerics = "<.*?>(?= *?:)";
-            var parrents = "(?<=> *:).*? (?=where)";
-            var constraints = "(?<=^.*)(?=where).*";
-
-            // has constraint, class has inheritance, class haven`t generics
-            assertion = "(?=^.*:.*where).*";
-            //  Abc  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class where T3 : IBase
-            className = "^.*?(?=:)";
-            classGenerics = "";
-            parrents = "(?<=^:).*?(?=where)";
-            constraints = "(?=^ *where).*";
-
-            // has constraint, class haven`t inheritance, class has generics
-            assertion = "";
-
-            // has constraint, class haven`t inheritance, class haven`t generics
-            // haven`t constraint, class has inheritance, class has generics
-            // haven`t constraint, class has inheritance, class haven`t generics
-            // haven`t constraint, class haven`t inheritance, class has generics
-            // haven`t constraint, class haven`t inheritance, class haven`t generics
+            if (isClass)
+                node.Stereotype.Type = StereotypeType.Class;
+            if (isAbstract)
+                node.Stereotype.Type = StereotypeType.AbstractClass;
+            if (isInterface)
+                node.Stereotype.Type = StereotypeType.Interface;
 
             return node;
         }
-
     }
 }
 
+
+//public Node Parse1(string a)
+//{
+//a = a.Replace("class", "").Trim('{').Replace("\r\n", "");
+//var node = new Node();
+
+
+
+//// has constraint, class has inheritance, class has generics
+//var assertion = "(?=^.*<.*> *:.*where).*";
+////  Abc<T>  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class
+//var className = @"^.*?(?=<)";
+//var classGenerics = "<.*?>(?= *?:)";
+//var parrents = "(?<=> *:).*? (?=where)";
+//var constraints = "(?<=^.*)(?=where).*";
+
+//// has constraint, class has inheritance, class haven`t generics
+//assertion = "(?=^.*:.*where).*";
+////  Abc  :  Base1<T2, T3>, IBase2<T2, T1>, ICouple where T1 : IBase3 where T2 : new(), class where T3 : IBase
+//className = "^.*?(?=:)";
+//classGenerics = "";
+//parrents = "(?<=^:).*?(?=where)";
+//constraints = "(?=^ *where).*";
+
+//// has constraint, class haven`t inheritance, class has generics
+//assertion = "";
+
+//// has constraint, class haven`t inheritance, class haven`t generics
+//// haven`t constraint, class has inheritance, class has generics
+//// haven`t constraint, class has inheritance, class haven`t generics
+//// haven`t constraint, class haven`t inheritance, class has generics
+//// haven`t constraint, class haven`t inheritance, class haven`t generics
+
+//return node;
+//}
+
+//private void Process()
+//{
+//    foreach (var node in nodes)
+//    {
+//        if (node.Parents != null)
+//        {
+//            foreach (var parent in node.Parents)
+//            {
+//                var type = nodes.FirstOrDefault(_ => _.Stereotype.Name == parent.Name)?.Stereotype.Type;
+//                if (type != null)
+//                {
+//                    parent.Type = type.Value;
+//                }
+//            }
+//        }
+//    }
+//}
