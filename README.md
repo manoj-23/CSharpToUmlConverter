@@ -1,4 +1,4 @@
-# Unility for convert C# to UML diagram.
+# Utility for convert C# to UML diagram.
 
 Console application.
 
